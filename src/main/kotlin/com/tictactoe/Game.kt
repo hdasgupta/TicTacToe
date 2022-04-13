@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import java.util.*
 
-@Component
 class Game {
     private val node = load()
     val scanner = Scanner(System.`in`)

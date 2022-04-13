@@ -1,0 +1,13 @@
+html,body {
+    height:100%;
+}
+.bg-blue {
+  background: blue;
+}
+.bg-green {
+  background: green;
+}
+.button {
+    font-size: 300px;
+    width: 100%;
+}
