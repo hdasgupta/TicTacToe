@@ -16,7 +16,7 @@ class Services:CommandLineRunner {
                 error = true
             }
             running = false
-        }
+        }.start()
     }
 
 
