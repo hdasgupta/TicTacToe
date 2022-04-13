@@ -102,6 +102,8 @@ class Board private constructor(val value: UInt) {
 
     companion object {
 
+        var processed: Int = 0
+
         fun makeTree() {
             var list:LinkedBlockingQueue<List<UInt?>> = LinkedBlockingQueue()
             val oponentList = Value.values().map { it.opponent().ordinal.toUInt() }
@@ -120,6 +122,7 @@ class Board private constructor(val value: UInt) {
             while (list.isNotEmpty()) {
                  while (list.isEmpty()){}
                 val i = list.poll()!!
+                processed++
                  println(i)
                  if(map[i[0]]==null) {
                      println()

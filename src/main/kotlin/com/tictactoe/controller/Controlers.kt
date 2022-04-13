@@ -1,5 +1,6 @@
 package com.tictactoe.controller
 
+import com.tictactoe.Board
 import com.tictactoe.Services
 import com.tictactoe.writeToProperty
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,7 +21,7 @@ class Controlers {
     @ResponseBody
     fun download(responseBody: HttpServletResponse) {
         if(services.running) {
-            responseBody.writer.println("Running")
+            responseBody.writer.println("Running: (Processed ${Board.processed})")
         } else if(services.error) {
             responseBody.writer.println("Error Occured")
         } else {
