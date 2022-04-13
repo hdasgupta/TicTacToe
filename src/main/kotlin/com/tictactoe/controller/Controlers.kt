@@ -21,6 +21,8 @@ class Controlers {
     fun download(responseBody: HttpServletResponse) {
         if(services.running) {
             responseBody.writer.println("Running")
+        } else if(services.error) {
+            responseBody.writer.println("Error Occured")
         } else {
             writeToProperty(responseBody.outputStream)
         }
