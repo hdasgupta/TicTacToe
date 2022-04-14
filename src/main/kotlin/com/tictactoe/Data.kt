@@ -29,34 +29,37 @@ enum class Value(val chr:Char) {
 
 fun load(): Node {
 
-    val nodes: TreeMap<Int, Node> = TreeMap()
+    val nodes: TreeMap<Long, Node> = TreeMap()
 
     val p = Properties()
     p.load(Main.BoardUtils.javaClass.classLoader.getResourceAsStream("tictactoe.properties"))
+    //nodes[0L] = Node("_________", null, mutableListOf())
 
     p.forEach {
-        val child = it.key.toString().substring(1).toInt()
+        val child = it.key.toString().substring(1).toLong()
         val parentWinner = it.value.toString().split(" ")
-        val winner = Value.values()[parentWinner[0].toInt()]
-        //val childStr = Board.getList(child).joinToString("") { v->v.chr.toString() }
-        //val childNode = Node(childStr, winner.chr, mutableListOf())
-        //nodes[child] = childNode
-//        }
+        val winner = if(parentWinner[0]=="null") null else Value.values()[parentWinner[0].toInt()]
+        val childStr = (0..8).joinToString("") { Value.values()[getExactValue(child, it).toInt()].chr.toString() }
+        val childNode = Node(childStr, winner?.chr ?: null, mutableListOf())
+        nodes[child] = childNode
     }
 
     p.forEach {
-        val child = it.key.toString().substring(1).toInt()
+        val child = it.key.toString().substring(1).toLong()
         val parentWinner = it.value.toString().split(" ")
+        println(child)
         val childNode = nodes[child]!!
-        val parent = parentWinner[1].toInt()
+        val parent = parentWinner[1].toLong()
 
-        nodes[parent]!!.child.add(childNode)
+        if(parent!=-1L) {
+            nodes[parent]!!.child.add(childNode)
+        }
     }
 
     return nodes[0]!!
 }
 
-class Node(val str: String, val winner: Char, val child: MutableList<Node>) {
+class Node(val str: String, val winner: Char?, val child: MutableList<Node>) {
     fun print() {
         var i =0
         do {
@@ -101,7 +104,7 @@ class Main {
     fun makeTree() {
         val oponentList = Value.values().map { it.opponent().ordinal.toLong() }
         var running = true
-        val services = Executors.newFixedThreadPool(1000)
+        val services = Executors.newFixedThreadPool(Int.MAX_VALUE)
         val b = getBoard(0)
         list.add(0, Value.X.ordinal, null)
         options[0]!!.board = map[0]

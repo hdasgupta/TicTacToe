@@ -51,8 +51,8 @@ class Options {
 //    @Autowired
 //    private lateinit var optionRepo: OptionRepo
 
-    val all
-        get() = priorityMap.values
+    val all:List<Option>
+        get() = priorityMap.keys.sorted().map { priorityMap[it]!! }
 
     operator fun get(index: Long): Option? =
         if(priorityMap.containsKey(index)) {

@@ -12,19 +12,19 @@ class Game {
         val state = State(node)
         state.node.print()
         do {
-            println("Your answer: ")
+            print("Your answer: ")
             val ans = scanner.nextLine()
             state.move(ans.toInt(), 'x')
-            if(state.node.winner!='_') {
-                println("Winner is ${state.node.winner.toUpperCase()}")
+            if(state.node.winner!= null &&state.node.winner=='_') {
+                println("Winner is ${state.node.winner!!.toUpperCase()}")
                 return
             }
             if(state.node.child.isEmpty()) {
                 println("Match Drawn")
             }
             state.automove('o')
-            if(state.node.winner!='_') {
-                println("Winner is ${state.node.winner.toUpperCase()}")
+            if(state.node.winner!=null && state.node.winner!='_') {
+                println("Winner is ${state.node.winner!!.toUpperCase()}")
                 return
             }
             state.node.print()
