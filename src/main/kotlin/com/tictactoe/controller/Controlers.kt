@@ -1,8 +1,7 @@
 package com.tictactoe.controller
 
-import com.tictactoe.Board
+import com.tictactoe.Queues
 import com.tictactoe.Services
-import com.tictactoe.writeToProperty
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
@@ -14,6 +13,10 @@ class Controlers {
     @Autowired
     lateinit var services: Services
 
+    @Autowired
+    lateinit var queues: Queues
+
+
     @GetMapping(value = ["/"])
     fun index():String = "Index"
 
@@ -21,11 +24,11 @@ class Controlers {
     @ResponseBody
     fun download(responseBody: HttpServletResponse) {
         if(services.running) {
-            responseBody.writer.println("Running: (Processed ${Board.processed})")
+            responseBody.writer.println("Running: (Processed ${services.main.processed}, pending ${queues.pending()})")
         } else if(services.error) {
             responseBody.writer.println("Error Occured")
         } else {
-            writeToProperty(responseBody.outputStream)
+            services.main.writeToProperty(responseBody.outputStream)
         }
     }
 }

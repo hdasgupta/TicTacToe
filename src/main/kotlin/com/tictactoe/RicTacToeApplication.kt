@@ -13,8 +13,6 @@ class RicTacToeApplication
 
 fun main(args: Array<String>) {
 	runApplication<RicTacToeApplication>(*args)
-//	Board.makeTree()
-//	writeToProperty(File("C:\\Users\\himag\\tictactoe.properties"))
 //	println(2.0*(9.0)<4.0.pow(8))
 //	load()
 //	Game().play()

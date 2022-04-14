@@ -1,13 +1,14 @@
 package com.tictactoe
 
-import sun.reflect.generics.tree.Tree
-import java.io.File
+import com.tictactoe.Main.BoardUtils.Companion.Flip.Companion.getExactValue
+import com.tictactoe.Main.BoardUtils.Companion.Flip.Companion.setExactValue
+import com.tictactoe.Main.BoardUtils.Companion.winner
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.io.OutputStream
+import java.util.Optional
 import java.util.Properties
-import java.util.Queue
 import java.util.TreeMap
-import java.util.concurrent.*
-import kotlin.streams.toList
 
 enum class Value(val chr:Char) {
     None('_'),
@@ -22,18 +23,6 @@ enum class Value(val chr:Char) {
             X
 }
 
-val map:TreeMap<UInt, Board> = TreeMap()
-val parent: TreeMap<UInt, UInt> = TreeMap()
-
-fun writeToProperty(o: OutputStream) {
-    val p = Properties()
-
-    parent.entries.forEach {
-
-            i->p.setProperty("T${i.key}", "${map[i.key]!!.winner} ${i.value}")
-    }
-    p.save(o,"Tic Tac Toe")
-}
 
 
 
@@ -42,7 +31,7 @@ fun load(): Node {
     val nodes: TreeMap<Int, Node> = TreeMap()
 
     val p = Properties()
-    p.load(Board.javaClass.classLoader.getResourceAsStream("tictactoe.properties"))
+    p.load(Main.BoardUtils.javaClass.classLoader.getResourceAsStream("tictactoe.properties"))
 
     p.forEach {
         val child = it.key.toString().substring(1).toInt()
@@ -85,155 +74,228 @@ class Node(val str: String, val winner: Char, val child: MutableList<Node>) {
         println("-------------")
     }
 }
+@Component
+class Main {
+    @Autowired
+    lateinit var map: BoardMaster
+    @Autowired
+    lateinit var list: Queues
+    @Autowired
+    lateinit var options: Options
+//    @Autowired
+//    lateinit var optionRepo: OptionRepo
 
-class Board private constructor(val value: UInt) {
-    val values = matches(value)
+    var processed: Int = 0
 
-    val winner: UInt = winner(value)
+    fun writeToProperty(o: OutputStream) {
+        val p = Properties()
 
-    init {
+        options.all.forEach {
 
-        if(values.size>1) {
-            println(values)
+                i->p.setProperty("T${i!!.id}", "${i.board!!.winner} ${Optional.ofNullable(i.parent).map { it.id }.orElse(-1)}")
+        }
+        p.save(o,"Tic Tac Toe")
+    }
+
+    fun makeTree() {
+        val oponentList = Value.values().map { it.opponent().ordinal.toLong() }
+        var running = true
+        val b = getBoard(0)
+        list.add(0, Value.X.ordinal, null)
+        options[0]!!.board = map[0]
+
+        Thread {
+            while (running) {
+                Thread.sleep(60000)
+                System.gc()
+            }
+        }.start()
+        while (list.isNotEmpty()) {
+            val i = list.peek()!!
+            processed++
+//            println(i)
+//            if(map[i.current.toLong()]==null) {
+//                println()
+//            }
+            if(map[i.current]!!.winner == null || map[i.current]!!.winner == Value.None.ordinal) {
+                    val board = map[i.current.toLong()]!!
+                    for(v in options[board]) {
+                        for(index in 0..8) {
+                            if(v.id!![index] == 0L) {
+                                val it = setExactValue(v.id!!, index,i.player.toLong())
+
+                                val b = getBoard(it.toLong())
+                                for(value in b.values) {
+                                    list.add(value, oponentList[i.player!!.toInt()].toInt(), i.current)
+                                }
+                            }
+                        }
+                    }
+
+
+            }
+            list.poll()
+        }
+
+//        map.saveAll()
+//        options.saveAll()
+        running = false
+    }
+
+    fun getBoard(value: Long): BoardUtils {
+        return if(map[value] !=null) {
+            BoardUtils(value, options[map[value]!!].map { it.id }.toSet() as Set<Long>)
+        } else {
+            val b = BoardUtils(value)
+            b.values.forEach {
+                map[it] = b
+
+            }
+            b
         }
     }
 
 
+    operator fun Long.get(index: Int) = getExactValue(this, index)
 
-    companion object {
 
-        var processed: Int = 0
+    class BoardUtils(value: Long, val values: Set<Long>) {
 
-        fun makeTree() {
-            var list:LinkedBlockingQueue<List<UInt?>> = LinkedBlockingQueue()
-            val oponentList = Value.values().map { it.opponent().ordinal.toUInt() }
-            val mainService = Executors.newFixedThreadPool(Int.MAX_VALUE)
-            val updateService = Executors.newFixedThreadPool(Int.MAX_VALUE)
-            var running = true
-            getBoard(0u)
-            list.add(listOf(0u, Value.X.ordinal.toUInt(), null))
+        constructor(value: Long): this(value, matches(value))
 
-            Thread {
-                while (running) {
-                    Thread.sleep(5000)
-                    System.gc()
-                }
-            }.start()
-            while (list.isNotEmpty()) {
-                 while (list.isEmpty()){}
-                val i = list.poll()!!
-                processed++
-                 println(i)
-                 if(map[i[0]]==null) {
-                     println()
-                 }
-                if(map[i[0]]!!.winner == Value.None.ordinal.toUInt()) {
-                    mainService.run {
-                        val board = map[i[0]]!!
-                        for(v in board.values) {
-                            for(index in 0..8) {
-                                if(getValue(v, index) == 0u) {
-                                    val it = (v and inverts[index]!!) or (i[1]!! shl index)
+        val winner = value.winner
+//        init {
+//
+//            if(values.size>1) {
+//                println(values)
+//            }
+//        }
 
-                                    val b = getBoard(it)
-                                    for(value in b.values) {
-                                        list.add(listOf(value, oponentList[i[1]!!.toInt()], i[0]))
-                                        parent[value] = i[0]!!
-                                    }
-                                }
+
+        companion object {
+
+            operator fun Long.get(index: Int) = getExactValue(this, index)
+
+            private val Long.flip
+                get() = Flip(this)
+            val Long.rotate
+                get() = Flip.rotate(this)
+            val Long.winner: Long?
+                get() = Flip.winner(this)
+
+            class Flip(value:Long) {
+                val horizontal = flipHorVal(value)
+                val vertical = flipVertVal(value)
+                val diagonal1 = flipDiag1(value)
+                val diagonal2 = flipDiag2(value)
+                val transpose = transpose(value)
+                companion object {
+
+                    fun rotate(v: Long): Long = flipHor(flipDiag1(v))
+
+                    private fun transpose(v: Long): Long = flipVert(flipHor(v))
+
+                    private fun flipDiag1Val(v: Long): Long = flipDiag1(v)
+
+                    private fun flipDiag2Val(v: Long): Long = flipDiag2(v)
+
+                    private fun flipHorVal(v: Long): Long = flipHor(v)
+
+                    private fun flipVertVal(v: Long): Long = flipVert(v)
+
+                    private fun flipDiag1(v: Long): Long {
+
+                        return swap(swap(swap(v, 2, 6), 1, 3), 5, 7)
+                    }
+
+                    private fun flipDiag2(v: Long): Long {
+                        return swap(swap(swap(v, 0, 8), 1, 5), 3, 7)
+                    }
+
+                    private fun flipHor(v: Long): Long {
+                        return swap(swap(swap(v, 0, 2), 3, 5), 6, 8)
+                    }
+
+                    private fun flipVert(v: Long): Long {
+                        return swap(swap(swap(v, 0, 6), 1, 7), 2, 8)
+                    }
+
+
+                    fun winner(value: Long): Long? {
+                        var list = value
+                        if((0..8).all { getExactValue(value, it) == Value.None.ordinal.toLong() }) {
+                            return Value.None.ordinal.toLong()
+                        }
+                        (0..1).forEach {
+                            (0..2).forEach {
+                                    row->
+                                var value = isSameRow(list, row)
+                                if(value != Value.None.ordinal.toLong())
+                                    return value
                             }
+                            list = list.rotate
+                        }
+                        return null
+                    }
+
+                    private fun isSameRow(v: Long, row: Int): Long =
+                        if(v[row*3] ==v[row*3+1] &&
+                            v[row*3]==v[row*3+2])
+                            v[row*3]
+                        else
+                            Value.None.ordinal.toLong()
+
+                    private var shifts: Map<Int, Long> = (0..8).map {
+                        mutableMapOf(Pair(it, 3L shl it*2))
+                    }.reduce {
+                            a, m -> a.let {
+                        it.putAll(m)
+                        it
+                    }
+                    }
+                    private var inverts: Map<Int, Long> = shifts.entries.map {
+                        mutableMapOf(Pair(it.key, it.value.inv()))
+                    }.reduce {
+                            a, m -> a.let {
+                        it.putAll(m)
+                        it
+                    }
+                    }
+
+                    fun getExactValue(value: Long, index: Int): Long = (value and shifts[index]!!) shr index*2
+
+                    fun setExactValue(value: Long, index: Int, v: Long): Long = (value and inverts[index]!! ) or (v shl index*2)
+
+                    private fun getValue(value: Long, index: Int): Long =
+                        if(index<0 || index>8) {
+                            println()
+                            throw Exception("error")
+                        } else {
+                            value and shifts[index]!!
                         }
 
-                    }
+                    private fun swap(values: Long, i1:Int, i2: Int): Long =
+                        setExactValue(setExactValue(values,i2, values[i1]), i1,  values[i2])
                 }
+
             }
 
-            //mainService.awaitTermination(1,TimeUnit.HOURS )
-            updateService.awaitTermination(1, TimeUnit.HOURS)
-            running = false
-        }
-
-        fun getBoard(value: UInt): Board {
-            return if(map[value] !=null) {
-                map[value]!!
-            } else {
-                val b = Board(value)
-                println(b.value)
-                b.values.forEach {
-                    map[it] = b
+            private fun matches(value: Long): Set<Long> {
+                val values = mutableSetOf<Long>()
+                var current = value
+                (0..3).forEach { _ ->
+                    values.add(current)
+                    values.add(current.flip.horizontal)
+                    values.add(current.flip.vertical)
+                    values.add(current.flip.diagonal1)
+                    values.add(current.flip.diagonal2)
+                    values.add(current.flip.transpose)
+                    current = current.rotate
                 }
-                b
+                return values.toSet()
             }
-        }
 
-        private fun matches(value: UInt): Set<UInt> {
-            val values = mutableSetOf<UInt>()
-            var list = value
-            (0..3).forEach { _ ->
-                values.add(list)
-                values.add(flipHorVal(list))
-                values.add(flipHorVal(list))
-                values.add(flipDiag1Val(list))
-                values.add(flipDiag2Val(list))
-                values.add(transpose(list))
-                list = rotate(list)
-            }
-            return values.toSet()
-        }
 
-        private fun winner(value: UInt): UInt {
-            val values:Set<UInt> = setOf()
-            var list = value
-            if((0..8).all { getExactValue(value, it) == Value.None.ordinal.toUInt() }) {
-                return Value.None.ordinal.toUInt()
-            }
-            (0..1).forEach {
-                (0..2).forEach {
-                        row->
-                    var value = isSameRow(list, row)
-                    if(value != Value.None.ordinal.toUInt())
-                        return value
-                }
-                list = rotate(list)
-            }
-            return Value.None.ordinal.toUInt()
-        }
-
-        private fun isSameRow(v: UInt, row: Int): UInt =
-            if(getValue(v, row*3) ==getValue(v, row*3+1) &&
-                getValue(v, row*3)==getValue(v, row*3+2))
-                getExactValue(v, row*3)
-            else
-                Value.None.ordinal.toUInt()
-
-        fun rotate(v: UInt): UInt = flipHor(flipDiag1(v))
-
-        fun transpose(v: UInt): UInt = flipVert(flipHor(v))
-
-        fun flipDiag1Val(v: UInt): UInt = flipDiag1(v)
-
-        fun flipDiag2Val(v: UInt): UInt = flipDiag2(v)
-
-        fun flipHorVal(v: UInt): UInt = flipHor(v)
-
-        fun flipVertVal(v: UInt): UInt = flipVert(v)
-
-        fun flipDiag1(v: UInt): UInt {
-
-            return swap(swap(swap(v, 2, 6), 1, 3), 5, 7)
-        }
-
-        fun flipDiag2(v: UInt): UInt {
-            return swap(swap(swap(v, 0, 8), 1, 5), 3, 7)
-        }
-
-        fun flipHor(v: UInt): UInt {
-            return swap(swap(swap(v, 0, 2), 3, 5), 6, 8)
-        }
-
-        fun flipVert(v: UInt): UInt {
-            return swap(swap(swap(v, 0, 6), 1, 7), 2, 8)
-        }
 //
 //        fun getValue(v: List<Value>): Int =
 //            v.map { it.ordinal }.reduce { a, o -> a*3 + o}
@@ -251,40 +313,13 @@ class Board private constructor(val value: UInt) {
 //            return list
 //        }
 
-        private var shifts: Map<Int, UInt> = (0..8).map {
-            mutableMapOf(Pair(it, 3u shl it*2))
-        }.reduce {
-                a, m -> a.let {
-            it.putAll(m)
-            it
-        }
-        }
-        private var inverts: Map<Int, UInt> = shifts.entries.map {
-            mutableMapOf(Pair(it.key, it.value.inv()))
-        }.reduce {
-                a, m -> a.let {
-            it.putAll(m)
-            it
-        }
+
+
         }
 
-        private fun getExactValue(value: UInt, index: Int): UInt = (value and shifts[index]!!) shr index*2
 
-        private fun getValue(value: UInt, index: Int): UInt =
-            if(index<0 || index>8) {
-                println()
-                throw Exception("error")
-            } else {
-                value and shifts[index]!!
-            }
-
-        private fun swap(values: UInt, i1:Int, i2: Int): UInt {
-            val value1 = getExactValue(values, i1) shl i2*2
-            val value2 =  getExactValue(values, i2) shl i1*2
-            return (((values and inverts[i2]!! ) or value1) and inverts[i1]!! ) or value2
-        }
     }
 
-
-
 }
+
+
