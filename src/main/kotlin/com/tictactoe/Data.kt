@@ -9,6 +9,7 @@ import java.io.OutputStream
 import java.util.Optional
 import java.util.Properties
 import java.util.TreeMap
+import java.util.concurrent.Executors
 
 enum class Value(val chr:Char) {
     None('_'),
@@ -100,6 +101,7 @@ class Main {
     fun makeTree() {
         val oponentList = Value.values().map { it.opponent().ordinal.toLong() }
         var running = true
+        val services = Executors.newFixedThreadPool(1000)
         val b = getBoard(0)
         list.add(0, Value.X.ordinal, null)
         options[0]!!.board = map[0]
@@ -117,20 +119,31 @@ class Main {
 //            if(map[i.current.toLong()]==null) {
 //                println()
 //            }
-            if(map[i.current]!!.winner == null || map[i.current]!!.winner == Value.None.ordinal) {
-                    val board = map[i.current.toLong()]!!
+            services.run {
+//                println(map[i.current]!!.winner)
+                if(map[i.current]!!.winner == null || map[i.current]!!.winner == Value.None.ordinal) {
+                    val board = map[i.current]!!
                     for(v in options[board]) {
                         for(index in 0..8) {
                             if(v.id!![index] == 0L) {
                                 val it = setExactValue(v.id!!, index,i.player.toLong())
 
-                                val b = getBoard(it.toLong())
-                                for(value in b.values) {
-                                    list.add(value, oponentList[i.player!!.toInt()].toInt(), i.current)
+                                if(options[it] == null) {
+
+                                    val b = getBoard(it)
+                                    for (value in b.values) {
+                                        list.add(value, oponentList[i.player!!.toInt()].toInt(), i.current)
+                                    }
+                                } else {
+                                    options[it]!!.parent = options[i.current]
                                 }
                             }
                         }
                     }
+
+                } else {
+                    println(map[i.current]!!.winner)
+                }
 
 
             }
