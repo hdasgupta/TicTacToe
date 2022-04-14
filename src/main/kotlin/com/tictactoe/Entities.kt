@@ -5,8 +5,6 @@ import org.springframework.stereotype.Component
 import java.util.Objects
 import java.util.TreeMap
 import java.util.concurrent.LinkedBlockingQueue
-import javax.persistence.*
-import javax.transaction.Transactional
 
 @Component
 class Queues {
@@ -17,7 +15,7 @@ class Queues {
     @Autowired
     private lateinit var options: Options
 
-    @Transactional
+//    @Transactional
     fun add(current: Long,
             player: Int,
             parent: Long? = null
@@ -33,7 +31,7 @@ class Queues {
 
 
 
-    @Transactional
+//    @Transactional
     fun poll() = queues.poll()
 
     fun peek() = queues.peek()
@@ -66,7 +64,7 @@ class Options {
     operator fun get(index: Board): List<Option> =
         priorityMap.values.filter { it?.board?.id==index.id } as List<Option>
 
-    @Transactional
+//    @Transactional
     operator fun set(index: Long, parent: Long?): Option =
         get(index)
             .let {
@@ -115,7 +113,7 @@ class BoardMaster {
             null
         }
 
-    @Transactional
+//    @Transactional
     operator fun set(index: Long, boardUtils: Main.BoardUtils): Unit {
         var list = mutableListOf<Option>()
         val existingBoards = boardUtils.values.map { options[it] }.filter { Objects.nonNull(it) }
