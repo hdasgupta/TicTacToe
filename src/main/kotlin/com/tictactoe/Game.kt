@@ -11,6 +11,9 @@ class Game {
     val scanner = Scanner(System.`in`)
 
     fun move(state: State, ans: Int): Status {
+        if(state.node.str[ans]!='_') {
+            return Status("Wrong Move", null)
+        }
         //state.node.print()
 //        do {
 //            print("Your answer: ")

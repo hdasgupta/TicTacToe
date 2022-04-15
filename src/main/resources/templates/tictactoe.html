@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content=
             "width=device-width, initial-scale=1">
-
+    <script src = "https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
     <link rel="stylesheet" th:href="@{css/common.css}">
@@ -12,12 +12,13 @@
     <title>Choose Player</title>
 </head>
 <body style="height: 100%" class="h-100">
-    <form action="/tictactoe" method="get">
+
+    <form action="/tictactoe" method="post">
         <input type="hidden" name="player" th:value="${player}">
         <div class="container-fluid h-100">
             <div class="row" th:each="row, stat :${output}">
                 <div class="col-4 bg-gray h-100" style="text-align: center;" th:each="c, rstat : ${row}">
-                    <button type="submit" name="move" th:value="${stat.index*3+rstat.index}" th:class="${'btn btn-'+classes[c]+' bth-lg h-100 button-small '+(c>0?'disabled':'')}" th:disabled="${c>0?'disabled':'false'}">
+                    <button type="submit" name="move" th:value="${stat.index*3+rstat.index}" th:class="${'btn btn-'+classes[c]+' bth-lg h-100 button-small '+(c>0||message!=null?'disabled':'')}" th:disabled="${c>0||message!=null?'disabled':'false'}">
                         [[${chars[c]}]]
                     </button>
 
@@ -25,6 +26,21 @@
             </div>
         </div>
     </form>
+    <div class="container" style="position: absolute; top:0; left 0; opacity: 0.8" th:if="${message!=null}">
+        <div class="alert alert-info">
+            <center>
+                <p style="font-size: 48px">Win is a challenge</p>
+                <p style="font-size: 48px">[[${message}]]!</p>
+                <form action="/tictactoe" method="post">
+                    <input type="hidden" name="player" th:value="${player}">
+                    <button type="submit" class="btn btn-secondary bth-lg h-100" style="font-size: 32px">
+                        Lets play a new Game
+                    </button>
+                </form>
+            </center>
 
+        </div>
+
+    </div>
 </body>
 </html>

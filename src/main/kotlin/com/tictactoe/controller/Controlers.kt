@@ -27,7 +27,7 @@ class Controlers {
     @GetMapping(value = ["/"])
     fun index():String = "Index"
 
-    @GetMapping(value = ["/tictactoe"])
+    @PostMapping(value = ["/tictactoe"])
     fun tictactoe(player: Char?, move:Int?, map: ModelMap, session: HttpSession):String {
         val choosedPlayer = (player ?: 'x').toUpperCase()
         val opponent = if(choosedPlayer=='X') 'O' else 'X'
@@ -38,10 +38,6 @@ class Controlers {
         } else {
             state = session.getAttribute("state") as State
             val status = game.move(state, move)
-            if(status.winner=='_') {
-                state = State(game.node)
-                session.setAttribute("state", state)
-            }
             when(status.winner) {
                 'X' -> map["message"] = "You Won"
                 'O' -> map["message"] = "You Loss"

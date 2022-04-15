@@ -12,21 +12,24 @@
     <title>Choose Player</title>
 </head>
 <body style="height: 100%" class="h-100">
-<div class="container-fluid h-100">
+<form action="/tictactoe" method="post">
+    <div class="container-fluid h-100">
         <div class="row justify-content-center h-100">
             <div class="col-6 bg-blue h-100" style="text-align: center;">
-                <div class="btn btn-primary bth-lg h-100 button">
+                <button class="btn btn-primary bth-lg h-100 button" type="submit" name="player" value="X">
                     X
-                </div>
+                </button>
 
             </div>
             <div class="col-6 bg-green h-100" style="text-align: center;">
-                <div class="btn btn-success btn-lg h-100 button">
+                <button class="btn btn-success btn-lg h-100 button" type="submit" name="player" value="O">
                     O
-                </div>
+                </button>
 
             </div>
         </div>
     </div>
+</form>
+
 </body>
 </html>
