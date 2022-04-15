@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content=
+            "width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <link rel="stylesheet" th:href="@{css/common.css}">
+
+    <title>Choose Player</title>
+</head>
+<body style="height: 100%" class="h-100">
+    <form action="/tictactoe" method="get">
+        <input type="hidden" name="player" th:value="${player}">
+        <div class="container-fluid">
+            <div class="row" th:each="row, stat :${output}">
+                <div class="bg-gray h-100" style="text-align: center;" th:each="c, rstat : ${row}">
+                    <button type="submit" name="move" th:value="${stat.index*3+rstat.index}" th:class="${'btn btn-'+classes[c]+' bth-lg h-100 button-small '+(c>0?'disabled':'')}" th:disabled="${c>0?'disabled':'false'}">
+                        [[${chars[c]}]]
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </form>
+
+</body>
+</html>

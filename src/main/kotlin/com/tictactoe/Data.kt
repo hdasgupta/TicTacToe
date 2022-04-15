@@ -2,11 +2,10 @@ package com.tictactoe
 
 import com.tictactoe.Main.BoardUtils.Companion.Flip.Companion.getExactValue
 import com.tictactoe.Main.BoardUtils.Companion.Flip.Companion.setExactValue
-import com.tictactoe.Main.BoardUtils.Companion.winner
+import com.tictactoe.Main.BoardUtils.Companion.moves
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.OutputStream
-import java.util.Optional
 import java.util.Properties
 import java.util.TreeMap
 import java.util.concurrent.Executors
@@ -39,27 +38,43 @@ fun load(): Node {
         val child = it.key.toString().substring(1).toLong()
         val parentWinner = it.value.toString().split(" ")
         val winner = if(parentWinner[0]=="null") null else Value.values()[parentWinner[0].toInt()]
-        val childStr = (0..8).joinToString("") { Value.values()[getExactValue(child, it).toInt()].chr.toString() }
-        val childNode = Node(childStr, winner?.chr ?: null, mutableListOf())
+        val childStr = (0..8).joinToString("") { i->Value.values()[getExactValue(child, i).toInt()].chr.toString() }
+        println(childStr)
+        val childNode = Node(childStr, winner?.chr ?: null, mutableSetOf(),  mutableListOf())
         nodes[child] = childNode
     }
 
     p.forEach {
         val child = it.key.toString().substring(1).toLong()
         val parentWinner = it.value.toString().split(" ")
-        println(child)
+        //println(child)
         val childNode = nodes[child]!!
-        val parent = parentWinner[1].toLong()
+        val parents = if(parentWinner[1].isEmpty()) listOf() else parentWinner[1].split(",").map { i->i.toLong() }
 
-        if(parent!=-1L) {
-            nodes[parent]!!.child.add(childNode)
+        parents.forEach {
+            parent->
+            if(parent!=-1L) {
+                nodes[parent]!!.child.add(childNode)
+                childNode.parent.add(nodes[parent]!!)
+            }
         }
-    }
 
+    }
+    nodes[0]!!.nearestWin()
     return nodes[0]!!
 }
 
-class Node(val str: String, val winner: Char?, val child: MutableList<Node>) {
+
+
+class Node(val str: String, val winner: Char?, val parent:MutableSet<Node>, val child: MutableList<Node>) {
+    private var smartest: MutableMap<Char, Set<Node>> = mutableMapOf()
+    val player = if(str.count { it=='X' }==str.count{ it == 'O'}) 'X' else 'O'
+    var oWinsWithSteps: Int = Int.MAX_VALUE
+    var oLoseWithSteps:Int = Int.MAX_VALUE
+    var xWinningPossibilities : Set<Node> = setOf()
+    var drawPossibilities: Set<Node> = setOf()
+    var oWiningPossibilities: Set<Node> = setOf()
+
     fun print() {
         var i =0
         do {
@@ -77,6 +92,80 @@ class Node(val str: String, val winner: Char?, val child: MutableList<Node>) {
         } while (i<9)
         println("-------------")
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Node
+
+        if (str != other.str) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return str.hashCode()
+    }
+
+    fun nearest(x: Set<Node>, o: Set<Node>, d: Set<Node>) {
+        smartest['X'] = x.plus(d)
+        smartest['O'] = o.plus(d)
+        smartest['_'] = d
+    }
+
+    fun nearest(player:Char) = smartest[player]
+
+    fun smartMove(): Set<Node> {
+        return smartest[player]!!
+    }
+
+    fun nearestWin() {
+        if(child.isEmpty()) {
+            if(winner == 'X') {
+                oWinsWithSteps = Int.MAX_VALUE
+                oLoseWithSteps = 1
+                xWinningPossibilities = setOf(this)
+                drawPossibilities = setOf()
+                oWiningPossibilities = setOf()
+
+            } else if(winner == 'O') {
+                oWinsWithSteps = 1
+                oLoseWithSteps = Int.MAX_VALUE
+                xWinningPossibilities = setOf()
+                drawPossibilities = setOf()
+                oWiningPossibilities = setOf(this)
+
+            } else {
+                oWinsWithSteps = Int.MAX_VALUE
+                oLoseWithSteps = Int.MAX_VALUE
+                xWinningPossibilities = setOf()
+                drawPossibilities = setOf(this)
+                oWiningPossibilities = setOf()
+            }
+        } else  {
+            child.forEach{it.nearestWin()}
+            oWinsWithSteps = child.minOf { it.oWinsWithSteps }
+            oLoseWithSteps = child.minOf { it.oLoseWithSteps }
+            if(oWinsWithSteps!= Int.MAX_VALUE) {
+                oWinsWithSteps+=1
+            }
+            if(oLoseWithSteps!= Int.MAX_VALUE) {
+                oLoseWithSteps+=1
+            }
+            xWinningPossibilities = child.map { it.xWinningPossibilities }.flatten().toSet()
+            drawPossibilities = child.map { it.drawPossibilities }.flatten().toSet()
+            oWiningPossibilities = child.map { it.oWiningPossibilities }.flatten().toSet()
+        }
+    }
+
+    override fun toString(): String {
+        return "string(0)"
+    }
+
+//    fun string(level: Int): String{
+//        return "${"\t".repeat(level)}$str ($smartest) \n${child.joinToString("\n") { "${it.string(level+1)}" }}"
+//    }
 }
 @Component
 class Main {
@@ -96,7 +185,7 @@ class Main {
 
         options.all.forEach {
 
-                i->p.setProperty("T${i!!.id}", "${i.board!!.winner} ${Optional.ofNullable(i.parent).map { it.id }.orElse(-1)}")
+                i->p.setProperty("T${i!!.id}", "${i.board!!.winner} ${i.parent.joinToString(",") { it.id.toString() } }")
         }
         p.save(o,"Tic Tac Toe")
     }
@@ -123,29 +212,26 @@ class Main {
 //                println()
 //            }
             services.run {
+                val b = getBoard(i.current)
 //                println(map[i.current]!!.winner)
                 if(map[i.current]!!.winner == null || map[i.current]!!.winner == Value.None.ordinal) {
                     val board = map[i.current]!!
                     for(v in options[board]) {
-                        for(index in 0..8) {
-                            if(v.id!![index] == 0L) {
-                                val it = setExactValue(v.id!!, index,i.player.toLong())
 
-                                if(options[it] == null) {
-
-                                    val b = getBoard(it)
-                                    for (value in b.values) {
-                                        list.add(value, oponentList[i.player!!.toInt()].toInt(), i.current)
-                                    }
-                                } else {
-                                    options[it]!!.parent = options[i.current]
-                                }
+                        v.id!![Value.values()[i.player]].forEach {
+                            if(v.id==131337L) {
+                                println()
                             }
+
+                            //println("${v.id!!.string} -> ${it.string}")
+                            list.add(it, oponentList[i.player!!.toInt()].toInt(), v.id)
+
+
                         }
                     }
 
                 } else {
-                    println(map[i.current]!!.winner)
+                    //println(map[i.current]!!.winner)
                 }
 
 
@@ -158,7 +244,12 @@ class Main {
         running = false
     }
 
-    fun getBoard(value: Long): BoardUtils {
+    operator fun Long.get(value: Value): List<Long> {
+        return moves(this, value)
+
+    }
+
+     fun getBoard(value: Long): BoardUtils {
         return if(map[value] !=null) {
             BoardUtils(value, options[map[value]!!].map { it.id }.toSet() as Set<Long>)
         } else {
@@ -198,6 +289,12 @@ class Main {
                 get() = Flip.rotate(this)
             val Long.winner: Long?
                 get() = Flip.winner(this)
+            val Long.string
+                get() =
+                    (0..8).joinToString("") {
+                            i->
+                        Value.values()[getExactValue(this, i).toInt()].chr.toString()
+                    }
 
             class Flip(value:Long) {
                 val horizontal = flipHorVal(value)
@@ -239,9 +336,7 @@ class Main {
 
                     fun winner(value: Long): Long? {
                         var list = value
-                        if((0..8).all { getExactValue(value, it) == Value.None.ordinal.toLong() }) {
-                            return Value.None.ordinal.toLong()
-                        }
+
                         (0..1).forEach {
                             (0..2).forEach {
                                     row->
@@ -249,7 +344,13 @@ class Main {
                                 if(value != Value.None.ordinal.toLong())
                                     return value
                             }
+                            if(list[0]==list[4]&& list[0]==list[8] && list[0]!= Value.None.ordinal.toLong()) {
+                                return list[0]
+                            }
                             list = list.rotate
+                        }
+                        if((0..8).all { getExactValue(value, it) != Value.None.ordinal.toLong() }) {
+                            return Value.None.ordinal.toLong()
                         }
                         return null
                     }
@@ -295,6 +396,9 @@ class Main {
                 }
 
             }
+
+            fun moves(v: Long, value: Value) =
+                (0..8).filter { v[it] == 0L}.map { setExactValue(v, it,value.ordinal.toLong()) }
 
             private fun matches(value: Long): Set<Long> {
                 val values = mutableSetOf<Long>()

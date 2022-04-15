@@ -1,5 +1,6 @@
 package com.tictactoe
 
+import com.tictactoe.Main.BoardUtils.Companion.string
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.Objects
@@ -20,21 +21,27 @@ class Queues {
             player: Int,
             parent: Long? = null
     ) {
-        if(!completed.contains(current)) {
-            completed.add(current)
+        if(!processed(current) && !queues.any { it.current==current }) {
             options[current] = parent
             queues.add(Queue(current = current, player = player, parent = parent))
         } else {
-
+            if(parent == 528L) {
+                println()
+            }
+            options[current] = parent
         }
     }
 
+    fun processed(current: Long) = completed.contains(current)
 
 
 //    @Transactional
-    fun poll() = queues.poll()
-
     fun peek() = queues.peek()
+
+    fun poll() {
+        val queue = queues.poll()
+        completed.add(queue.current)
+    }
 
 
     fun isEmpty() = queues.isEmpty()
@@ -54,6 +61,10 @@ class Options {
     val all:List<Option>
         get() = priorityMap.keys.sorted().map { priorityMap[it]!! }
 
+    private fun add(option: Option) {
+        priorityMap[option.id] = option
+    }
+
     operator fun get(index: Long): Option? =
         if(priorityMap.containsKey(index)) {
             priorityMap[index]!!
@@ -64,29 +75,33 @@ class Options {
     operator fun get(index: Board): List<Option> =
         priorityMap.values.filter { it?.board?.id==index.id } as List<Option>
 
+
 //    @Transactional
     operator fun set(index: Long, parent: Long?): Option =
         get(index)
             .let {
                 if(it==null) {
-                    var p:Option? = null
+                    var p:MutableSet<Option> = mutableSetOf()
                     if(parent!=null) {
-                        p = get(parent).let {
+                        val par = get(parent).let {
                             par->
                             par ?: Option(parent, board = null)
 
                         }
-                        priorityMap[parent] = p
+                        add(par)
+                        p.add(par)
                     }
                     val o = Option(index, parent = p,  board = null)
-                    priorityMap[index] = o
+                    add(o)
                     o
 //                    optionRepo.save(o)
                 } else {
-                    if (parent != null)
-                        it!!.parent = get(parent)
-                    else
-                        it!!.parent = null
+                    if (parent != null) {
+                        /*if (it!!.parent != null && it!!.parent!!.id != get(parent)!!.id) {
+                            println("${index.string} ${it!!.parent!!.id.string}, ${get(parent)!!.id.string}")
+                        }*/
+                        it!!.parent.add(get(parent!!)!!)
+                    }
 //                    optionRepo.save(it)
                     it
                 }
@@ -143,38 +158,52 @@ class BoardMaster {
 class Queue (
 //    @Id
 //    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id:Long? = null,
     var current: Long,
     var player: Int,
-    var parent: Long? = null,
-    var processed: Boolean = false
+    var parent: Long? = null
 ) {
-    constructor(): this(null, 0L, Value.X.ordinal, null)
+    constructor(): this(-1L, Value.None.ordinal, null)
 }
-
+private var boardIndex = 0L
 //@Entity
 //@Table(name = "board")
 class Board(
 //    @Id
 //    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id:Long? = null,
+    var id:Long = boardIndex++,
     var winner: Int?,
 ) {
-    constructor(): this(null, Value.None.ordinal)
+    constructor(): this(winner =  null)
 }
 //
 //@Entity
 //@Table(name = "options")
 class Option(
 //    @Id
-    var id:Long?,
+    var id:Long,
 //    @ManyToOne
 //    @JoinColumn(name = "parent_id", referencedColumnName = "id")
-    var parent: Option? = null,
+    var parent: MutableSet<Option> = mutableSetOf(),
 //    @OneToOne
 //    @JoinColumn(name = "board_id", referencedColumnName = "id")
     var board: Board?
 ) {
-    constructor(): this(null, null, null)
+    constructor(): this(-1, mutableSetOf(), null)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Option
+
+        if (id != other.id) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+
 }
 

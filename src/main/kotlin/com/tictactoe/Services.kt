@@ -15,7 +15,7 @@ class Services:CommandLineRunner {
     override fun run(vararg args: String?) {
         Thread {
             try {
-                main.makeTree()
+//                main.makeTree()
                 //main.writeToProperty(File("C:\\Users\\himag\\tictactoe.properties").outputStream())
             } catch (t:Throwable) {
                 t.printStackTrace()
