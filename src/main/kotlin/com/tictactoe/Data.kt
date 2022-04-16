@@ -185,22 +185,26 @@ class Node(val str: String, val winner: Char?, val parent:MutableSet<Node>, val 
     }
 
     fun autoBestMove(): Node {
-        val minLoosing = child.maxOf { it.oLoseWithSteps }
-        var answer = child.filter { it.oLoseWithSteps == minLoosing }
-        var maxWining = answer.minOf { it.xWinningPossibilities.size - it.oWiningPossibilities.size }
-
-        if(answer.maxOf { it.xWinningPossibilities.size - it.oWiningPossibilities.size }<0) {
-            val worstMax = answer.maxOf { it.worsePosibility.size }
-            answer = child.filter { it.worsePosibility.size == worstMax }
-            maxWining = answer.minOf { it.xWinningPossibilities.size - it.oWiningPossibilities.size }
-        }
-        var answers = answer.filter { it.xWinningPossibilities.size - it.oWiningPossibilities.size == maxWining }
-        return if(answers.isEmpty()) {
-            val minLoose = child.minOf { it.drawPossibilities.size }
-            val answers = child.filter { it.drawPossibilities.size == minLoose }
-            answers.random()
+        if(child.any { it.winner=='O' }) {
+            return child.filter { it.winner == 'O' }.random()
         } else {
-            answers.random()
+            val minLoosing = child.maxOf { it.oLoseWithSteps }
+            var answer = child.filter { it.oLoseWithSteps == minLoosing }
+            var maxWining = answer.minOf { it.xWinningPossibilities.size - it.oWiningPossibilities.size }
+
+            if(answer.maxOf { it.xWinningPossibilities.size - it.oWiningPossibilities.size }<0) {
+                val worstMax = answer.maxOf { it.worsePosibility.size }
+                answer = child.filter { it.worsePosibility.size == worstMax }
+                maxWining = answer.minOf { it.xWinningPossibilities.size - it.oWiningPossibilities.size }
+            }
+            var answers = answer.filter { it.xWinningPossibilities.size - it.oWiningPossibilities.size == maxWining }
+            return if(answers.isEmpty()) {
+                val minLoose = child.minOf { it.drawPossibilities.size }
+                val answers = child.filter { it.drawPossibilities.size == minLoose }
+                answers.random()
+            } else {
+                answers.random()
+            }
         }
     }
     override fun toString(): String {
