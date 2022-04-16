@@ -41,7 +41,7 @@ class Game {
 
 
     fun play() {
-        val state = State(node, Difficulty.Difficult)
+        val state = State(node, Difficulty.Hardest)
         state.node.print()
         do {
             print("Your answer: ")
@@ -76,8 +76,8 @@ class Status(val string: String, val winner: Char?)
 
 enum class Difficulty {
     Easy,
-    Medium,
-    Difficult
+    Hard,
+    Hardest
 }
 
 class State(var node: Node, private val difficulty: Difficulty) {
@@ -98,8 +98,8 @@ class State(var node: Node, private val difficulty: Difficulty) {
     fun automove(): Unit {
         node = when(difficulty) {
             Difficulty.Easy -> node.autoRandomMove()
-            Difficulty.Medium -> node.autoGoodMove()
-            Difficulty.Difficult -> node.autoBestMove()
+            Difficulty.Hard -> node.autoGoodMove()
+            Difficulty.Hardest -> node.autoBestMove()
         }
     }
 }
