@@ -30,8 +30,8 @@
             </div>
         </div>
     </form>
-    <div class="container" style="position: absolute; top:0; left 0; opacity: 0.8" th:if="${message!=null}">
-        <div class="alert alert-info">
+    <div class="row" style="position: absolute; top:0; width: 100%; opacity: 0.8" th:if="${message!=null}">
+        <div class="alert alert-info" style="width: 100%">
             <center>
                 <p style="font-size: 48px" th:if="${difficulty.name() == 'Hardest'}">Win is a challenge</p>
                 <p style="font-size: 48px">[[${message}]]!</p>
@@ -41,6 +41,7 @@
                         Lets play a new Game
                     </button>
                 </form>
+                <br/>
                 <form action="/" method="get">
                     <button type="submit" class="btn btn-secondary bth-lg h-100" style="font-size: 32px">
                         Home
