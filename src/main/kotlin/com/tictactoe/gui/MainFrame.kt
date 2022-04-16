@@ -11,12 +11,12 @@ import java.awt.event.ActionListener
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 
-//
-//fun main() {
-//    val frame: JFrame = MainFrame()
-//
-//    frame.isVisible = true
-//}
+
+fun main() {
+    val frame: JFrame = MainFrame()
+
+    frame.isVisible = true
+}
 class MainFrame: JFrame() {
     init {
         val game=Game()
@@ -28,20 +28,20 @@ class MainFrame: JFrame() {
         layout = GridLayout(1, 3)
         add(MyList(false, node.parent.toList(), this))
         add(MyNode(true, node, this))
-        add(MyList(false, node.child.toList(), this))
+        add(MyList(false, node.child.toList(), this, node.worsePosibility.toList()))
         //pack()
     }
 
-    class MyList(readonly: Boolean, list: List<Node>, mainFrame: MainFrame) : JPanel() {
+    class MyList(readonly: Boolean, list: List<Node>, mainFrame: MainFrame, worseList: List<Node> = listOf()) : JPanel() {
         init {
             layout = GridLayout(list.size, 1)
             list.forEach {
-                add(MyNode(readonly, it, mainFrame))
+                add(MyNode(readonly, it, mainFrame, if(worseList.isEmpty()) null else worseList.contains(it)))
             }
         }
     }
 
-    class MyNode(readonly: Boolean, node: Node, mainFrame: MainFrame): JPanel() {
+    class MyNode(readonly: Boolean, node: Node, mainFrame: MainFrame, isWorse: Boolean? = null): JPanel() {
         val button = JButton("<html><table>" +
             "<tr>" +
             "${node.str.substring(0..2).map { "<td>$it</td>" }.joinToString("")}" +
@@ -58,7 +58,7 @@ class MainFrame: JFrame() {
             border = EmptyBorder(2,2,2,2)
             isEnabled = !readonly
             add(BorderLayout.CENTER, button)
-            add(BorderLayout.SOUTH, JLabel("${node.winner} ${node.xWinningPossibilities.size-node.oWiningPossibilities.size} ${node.oLoseWithSteps}"))
+            add(BorderLayout.SOUTH, JLabel("${node.winner} ${node.xWinningPossibilities.size-node.oWiningPossibilities.size} ${node.xWinningPossibilities.size} ${node.oWiningPossibilities.size} ${node.oLoseWithSteps} ${node.oWinsWithSteps} ${node.drawPossibilities.size} ${node.worsePosibility.size}"))
             button.addActionListener(NodeAction(node, mainFrame ) )
 //            node.str.forEach {
 //                if(readonly) {

@@ -1,9 +1,6 @@
 package com.tictactoe.controller
 
-import com.tictactoe.Game
-import com.tictactoe.Queues
-import com.tictactoe.Services
-import com.tictactoe.State
+import com.tictactoe.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.ModelMap
@@ -25,15 +22,25 @@ class Controlers {
     lateinit var game: Game
 
     @GetMapping(value = ["/"])
-    fun index():String = "Index"
+    fun index(map: ModelMap): String {
+        map["difficulties"] = Difficulty.values()
+        return "index"
+    }
+
+    @PostMapping(value = ["/choosePlayer"])
+    fun choosePlayer(difficulty: Difficulty,session: HttpSession):String {
+        session.setAttribute("difficulty", difficulty)
+        return "choosePlayer"
+    }
 
     @PostMapping(value = ["/tictactoe"])
     fun tictactoe(player: Char?, move:Int?, map: ModelMap, session: HttpSession):String {
+        val difficulty = session.getAttribute("difficulty") as Difficulty? ?: Difficulty.Easy
         val choosedPlayer = (player ?: 'x').toUpperCase()
         val opponent = if(choosedPlayer=='X') 'O' else 'X'
         var state: State
         if(move==null || move<0 ||move>8 || session.getAttribute("state") == null) {
-            state = State(game.node)
+            state = State(game.node, difficulty)
             session.setAttribute("state", state)
         } else {
             state = session.getAttribute("state") as State
@@ -66,7 +73,7 @@ class Controlers {
         )
         map["chars"] = arrayOf( "?", 'X', 'O')
         map["classes"] = arrayOf("secondary", "primary", "success")
-
+        map["difficulty"] = difficulty
         return "tictactoe"
     }
 

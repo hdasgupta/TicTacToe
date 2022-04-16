@@ -19,3 +19,8 @@ html,body {
     font-size: 120px;
     width: 100%;
 }
+
+.button-smaller {
+    font-size: 80px;
+    width: 100%;
+}

@@ -9,7 +9,7 @@
 
     <link rel="stylesheet" th:href="@{css/common.css}">
 
-    <title>Choose Player</title>
+    <title>Play Game</title>
 </head>
 <body style="height: 100%" class="h-100">
 
@@ -29,12 +29,17 @@
     <div class="container" style="position: absolute; top:0; left 0; opacity: 0.8" th:if="${message!=null}">
         <div class="alert alert-info">
             <center>
-                <p style="font-size: 48px">Win is a challenge</p>
+                <p style="font-size: 48px" th:if="${difficulty.name() == 'Difficult'}">Win is a challenge</p>
                 <p style="font-size: 48px">[[${message}]]!</p>
                 <form action="/tictactoe" method="post">
                     <input type="hidden" name="player" th:value="${player}">
                     <button type="submit" class="btn btn-secondary bth-lg h-100" style="font-size: 32px">
                         Lets play a new Game
+                    </button>
+                </form>
+                <form action="/" method="get">
+                    <button type="submit" class="btn btn-secondary bth-lg h-100" style="font-size: 32px">
+                        Home
                     </button>
                 </form>
             </center>
