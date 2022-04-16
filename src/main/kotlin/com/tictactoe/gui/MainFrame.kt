@@ -12,11 +12,11 @@ import javax.swing.*
 import javax.swing.border.EmptyBorder
 
 
-fun main() {
-    val frame: JFrame = MainFrame()
-
-    frame.isVisible = true
-}
+//fun main() {
+//    val frame: JFrame = MainFrame()
+//
+//    frame.isVisible = true
+//}
 class MainFrame: JFrame() {
     init {
         val game=Game()
