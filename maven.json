@@ -1,0 +1,8 @@
+{
+  "build": {
+    "goal": "assembly:jar-with-dependencies"
+  },
+  "deploy": {
+    "goal": "exec:java"
+  }
+}
